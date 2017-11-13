@@ -13,7 +13,7 @@ const (
 )
 
 func TestClient(t *testing.T) {
-	client, err := getThriftClient(serviceAddr, false)
+	client, err := getThriftClient(serviceAddr, true)
 	if err != nil {
 		t.Fatalf("set up client error %s", err)
 	}
@@ -22,7 +22,7 @@ func TestClient(t *testing.T) {
 		fmt.Println("send " + req)
 		res, err := client.SayHello(req)
 		if err != nil {
-			t.Errorf("read client error %s", err)
+			t.Fatalf("read client error %s", err)
 		}
 		fmt.Println("received " + res)
 	}

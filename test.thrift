@@ -1,4 +1,4 @@
-namespace java com.alibaba.dubbo.rpc.thrift
+namespace java com.test.thrift
 namespace go test
 
 service Demo {

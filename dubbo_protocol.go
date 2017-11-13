@@ -10,8 +10,8 @@ const (
 	Magic                    = -9540
 	DefaultHeaderLength      = 1
 	DefaultMessageLength     = 1
-	MessageLengthIndex       = 2
-	MessageHeaderLengthIndex = 6
+	MessageLengthIndex       = 6
+	MessageHeaderLengthIndex = 10
 )
 
 type TDubboProtocolFactory struct {
@@ -41,6 +41,9 @@ func NewTDubboProtocol(trans thrift.TTransport, serviceName string) *TDubboProto
 }
 
 func (p *TDubboProtocol) WriteDubboHeader(seqId int32) error {
+	if err := p.WriteI32(DefaultMessageLength); err != nil { //message长度 i32最大值
+		return err
+	}
 	if err := p.WriteI16(Magic); err != nil { //magic数
 		return err
 	}
@@ -64,6 +67,9 @@ func (p *TDubboProtocol) WriteDubboHeader(seqId int32) error {
 }
 
 func (p *TDubboProtocol) ReadDubboHeader() error {
+	if _, err := p.ReadI32(); err != nil { //message长度 i32最大值
+		return err
+	}
 	if _, err := p.ReadI16(); err != nil { //magic数
 		return err
 	}
@@ -87,17 +93,19 @@ func (p *TDubboProtocol) ReadDubboHeader() error {
 
 func (p *TDubboProtocol) FillHeaderLength() {
 	if trans, ok := p.Transport().(*TDubboTransport); ok {
-		size := trans.Len()
-		buf := trans.Bytes()[MessageLengthIndex:(MessageLengthIndex + 4)]
-		binary.BigEndian.PutUint32(buf, uint32(size))
+		size := trans.Len() - 4
+		buf := trans.Bytes()[MessageHeaderLengthIndex:(MessageHeaderLengthIndex + 2)]
+		binary.BigEndian.PutUint16(buf, uint16(size))
 	}
 }
 
 func (p *TDubboProtocol) FillMessageLength() {
 	if trans, ok := p.Transport().(*TDubboTransport); ok {
-		size := trans.Len()
-		buf := trans.Bytes()[MessageHeaderLengthIndex:(MessageHeaderLengthIndex + 8)]
-		binary.BigEndian.PutUint64(buf, uint64(size))
+		size := trans.Len() - 4
+		buf := trans.Bytes()[0:4]
+		binary.BigEndian.PutUint32(buf, uint32(size))
+		buf = trans.Bytes()[MessageLengthIndex:(MessageLengthIndex + 4)]
+		binary.BigEndian.PutUint32(buf, uint32(size))
 	}
 }
 
